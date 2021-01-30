@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class App implements ru.example.SimpleCalculator {
+
 	private static final Logger log = LoggerFactory.getLogger(App.class);
 
 	public static void main(String[] args) {
@@ -48,6 +49,7 @@ public class App implements ru.example.SimpleCalculator {
 	}
 
 	public boolean validate(Path pathInput) {
+
 		try {
 			Source xmlFile = new StreamSource(pathInput.toFile());
 			SchemaFactory schemaFactory = SchemaFactory
