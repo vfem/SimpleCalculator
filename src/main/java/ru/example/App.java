@@ -59,7 +59,7 @@ public class App implements ru.example.SimpleCalculator {
 			validator.validate(xmlFile);
 			return true;
 		} catch (IOException | SAXException e) {
-			log.error("Exception occur", e);
+			log.error("An exception was thrown", e);
 			log.error("Input file not valid");
 			return false;
 		}
@@ -98,7 +98,7 @@ public class App implements ru.example.SimpleCalculator {
 			jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, "SimpleCalculator.xsd");
 			jaxbMarshaller.marshal(simpleCalculator, resultFile.toFile());
 		} catch (JAXBException e) {
-			log.error("Exception occur", e);
+			log.error("An exception was thrown", e);
 		}
 	}
 
