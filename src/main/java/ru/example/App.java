@@ -17,7 +17,6 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class App implements ru.example.SimpleCalculator {
-	//todo MORE logging!!!!!111
 	private static final Logger log = LoggerFactory.getLogger(App.class);
 
 	public static void main(String[] args) {
@@ -54,12 +52,13 @@ public class App implements ru.example.SimpleCalculator {
 			Source xmlFile = new StreamSource(pathInput.toFile());
 			SchemaFactory schemaFactory = SchemaFactory
 					.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-			Schema schema = schemaFactory.newSchema(new File("src/main/resources/SimpleCalculator.xsd"));
+			Schema schema = schemaFactory.newSchema(getClass().getResource("/SimpleCalculator.xsd"));
 			Validator validator = schema.newValidator();
 			validator.validate(xmlFile);
 			return true;
 		} catch (IOException | SAXException e) {
 			log.error("Exception occur", e);
+			log.error("Input file not valid");
 			return false;
 		}
 	}
