@@ -3,13 +3,22 @@ package ru.example;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
 import ru.example.xml.SimpleCalculator;
 import ru.example.xml.Term;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -25,16 +34,33 @@ public class App implements ru.example.SimpleCalculator {
 			String inputPath = args[0];
 			log.info("InputFile path - {}", inputPath);
 			String outputPath = args[1];
-			log.info("OutputFile path - {}",outputPath);
+			log.info("OutputFile path - {}", outputPath);
 			Path pathInput = Paths.get(inputPath);
 			Path pathOutput = Paths.get(outputPath);
 			App app = new App();
-			app.calculate(pathInput, pathOutput);
+			if (app.validate(pathInput)) {
+				app.calculate(pathInput, pathOutput);
+			}
 			log.info("Method is finished");
 		} else {
 			log.error("Invalid parameters, args size is {}\n" +
-					"Expecting 2 parameters: absolute path to InputFile.xml, absolute path to OutputFile.xml",
+							"Expecting 2 parameters: path to InputFile.xml, path to OutputFile.xml",
 					args.length);
+		}
+	}
+
+	public boolean validate(Path pathInput) {
+		try {
+			Source xmlFile = new StreamSource(pathInput.toFile());
+			SchemaFactory schemaFactory = SchemaFactory
+					.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+			Schema schema = schemaFactory.newSchema(new File("src/main/resources/SimpleCalculator.xsd"));
+			Validator validator = schema.newValidator();
+			validator.validate(xmlFile);
+			return true;
+		} catch (IOException | SAXException e) {
+			log.error("Exception occur", e);
+			return false;
 		}
 	}
 
@@ -119,6 +145,7 @@ public class App implements ru.example.SimpleCalculator {
 	}
 
 	private TermType getTypeOfTerm(Term operation) {
+
 		if (CollectionUtils.isNotEmpty(operation.getArg())) {
 			return TermType.TWO_NUMBERS;
 		}
@@ -136,6 +163,7 @@ public class App implements ru.example.SimpleCalculator {
 	}
 
 	private double doMath(double agr1, double agr2, String operationType) {
+
 		double result = 0;
 
 		if ("SUB".equals(operationType)) {
