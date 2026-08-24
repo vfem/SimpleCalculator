@@ -4,6 +4,12 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
+import ru.example.service.CalculationService;
+import ru.example.service.XmlValidationService;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -12,15 +18,15 @@ import java.nio.file.Paths;
 /**
  * Unit test for simple App.
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class AppTest {
 
-	private App app;
+	@Autowired
+	private CalculationService calculationService;
 
-	@Before
-	public void setUp() {
-
-		app = new App();
-	}
+	@Autowired
+	private XmlValidationService xmlValidationService;
 
 	@Test
 	public void calculateTest() {
@@ -29,7 +35,7 @@ public class AppTest {
 		String testOutputPath = "src/test/resources/TestResults.xml";
 		Path pathInput = Paths.get(testInputPath);
 		Path pathOutput = Paths.get(testOutputPath);
-		app.calculate(pathInput, pathOutput);
+		calculationService.calculate(pathInput, pathOutput);
 
 		String sampleResult = "src/test/resources/SampleTestResult.xml";
 		Path pathSample = Paths.get(sampleResult);
@@ -49,7 +55,7 @@ public class AppTest {
 		String testInputPathValid = "src/test/resources/SampleTest.xml";
 		Path pathInputValid = Paths.get(testInputPathValid);
 
-		Assert.assertTrue(app.validate(pathInputValid));
+		Assert.assertTrue(xmlValidationService.validate(pathInputValid));
 	}
 
 	@Test
@@ -58,7 +64,7 @@ public class AppTest {
 		String testInputPathNotValid = "src/test/resources/SampleTestNotValid.xml";
 		Path pathInputNotValid = Paths.get(testInputPathNotValid);
 
-		Assert.assertFalse(app.validate(pathInputNotValid));
+		Assert.assertFalse(xmlValidationService.validate(pathInputNotValid));
 
 	}
 }
