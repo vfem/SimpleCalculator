@@ -50,6 +50,27 @@ public class AppTest {
 	}
 
 	@Test
+	public void calculateExtraCoverageTest() {
+
+		String testInputPath = "src/test/resources/ExtraTest.xml";
+		String testOutputPath = "src/test/resources/ExtraTestResultsOutput.xml";
+		Path pathInput = Paths.get(testInputPath);
+		Path pathOutput = Paths.get(testOutputPath);
+		calculationService.calculate(pathInput, pathOutput);
+
+		String sampleResult = "src/test/resources/ExtraTestResult.xml";
+		Path pathSample = Paths.get(sampleResult);
+		try {
+			Assert.assertTrue(FileUtils.contentEquals(pathOutput.toFile(), pathSample.toFile()));
+		} catch (IOException e) {
+			e.printStackTrace();
+			Assert.fail();
+		} finally {
+			pathOutput.toFile().deleteOnExit();
+		}
+	}
+
+	@Test
 	public void validateTestValid() {
 
 		String testInputPathValid = "src/test/resources/SampleTest.xml";

@@ -3,7 +3,7 @@ package ru.example.xml;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.bind.annotation.*;
+import jakarta.xml.bind.annotation.*;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "simpleCalculator", propOrder = {
