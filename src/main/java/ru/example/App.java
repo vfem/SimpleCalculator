@@ -1,33 +1,34 @@
 package ru.example;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
-import ru.example.xml.SimpleCalculator;
-import ru.example.xml.Term;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import ru.example.service.CalculationService;
+import ru.example.service.XmlValidationService;
 
-import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.Schema;
-import javax.xml.validation.SchemaFactory;
-import javax.xml.validation.Validator;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
-public class App implements ru.example.SimpleCalculator {
+@SpringBootApplication
+public class App implements CommandLineRunner {
 
 	private static final Logger log = LoggerFactory.getLogger(App.class);
 
+	@Autowired
+	private XmlValidationService xmlValidationService;
+
+	@Autowired
+	private CalculationService calculationService;
+
 	public static void main(String[] args) {
+		SpringApplication.run(App.class, args);
+	}
+
+	@Override
+	public void run(String... args) throws Exception {
 		if (args.length == 2) {
 			log.info("Method is starting");
 			String inputPath = args[0];
@@ -36,9 +37,8 @@ public class App implements ru.example.SimpleCalculator {
 			log.info("OutputFile path - {}", outputPath);
 			Path pathInput = Paths.get(inputPath);
 			Path pathOutput = Paths.get(outputPath);
-			App app = new App();
-			if (app.validate(pathInput)) {
-				app.calculate(pathInput, pathOutput);
+			if (xmlValidationService.validate(pathInput)) {
+				calculationService.calculate(pathInput, pathOutput);
 			}
 			log.info("Method is finished");
 		} else {
@@ -46,137 +46,5 @@ public class App implements ru.example.SimpleCalculator {
 							"Expecting 2 parameters: path to InputFile.xml, path to OutputFile.xml",
 					args.length);
 		}
-	}
-
-	public boolean validate(Path pathInput) {
-
-		try {
-			Source xmlFile = new StreamSource(pathInput.toFile());
-			SchemaFactory schemaFactory = SchemaFactory
-					.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-			Schema schema = schemaFactory.newSchema(getClass().getResource("/SimpleCalculator.xsd"));
-			Validator validator = schema.newValidator();
-			validator.validate(xmlFile);
-			return true;
-		} catch (IOException | SAXException e) {
-			log.error("An exception was thrown", e);
-			log.error("Input file not valid");
-			return false;
-		}
-	}
-
-	public void calculate(Path file, Path resultFile) {
-
-		try {
-			JAXBContext jaxbContext = JAXBContext.newInstance(SimpleCalculator.class);
-			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			SimpleCalculator simpleCalculator = (SimpleCalculator) jaxbUnmarshaller.unmarshal(file.toFile());
-			List<SimpleCalculator.Expressions.Expression> expressions = simpleCalculator.getExpressions().getExpression();
-
-			List<SimpleCalculator.ExpressionResults.ExpressionResult> calculatedExpressionResults = new ArrayList<>();
-
-			for (SimpleCalculator.Expressions.Expression expression : expressions) {
-
-				Term operation = expression.getOperation();
-
-				double result = calculateTerm(operation);
-
-				SimpleCalculator.ExpressionResults.ExpressionResult expressionResult = new SimpleCalculator.ExpressionResults.ExpressionResult();
-				expressionResult.setResult(result);
-				log.info("Calculated expression = {} ", result);
-				calculatedExpressionResults.add(expressionResult);
-			}
-
-			SimpleCalculator.ExpressionResults outputResults = new SimpleCalculator.ExpressionResults();
-			outputResults.setExpressionResults(calculatedExpressionResults);
-
-			simpleCalculator.setExpressionResults(outputResults);
-			simpleCalculator.setExpressions(null);
-
-			Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-			jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-			jaxbMarshaller.setProperty(Marshaller.JAXB_NO_NAMESPACE_SCHEMA_LOCATION, "SimpleCalculator.xsd");
-			jaxbMarshaller.marshal(simpleCalculator, resultFile.toFile());
-		} catch (JAXBException e) {
-			log.error("An exception was thrown", e);
-		}
-	}
-
-	private double calculateTerm(Term operation) {
-
-		TermType typeOfTerm = getTypeOfTerm(operation);
-
-		if (TermType.TWO_NUMBERS == typeOfTerm) {
-			Integer agr1 = operation.getArg().get(0);
-			Integer agr2 = operation.getArg().get(1);
-
-			String operationType = operation.getOperationType();
-
-			return doMath(agr1, agr2, operationType);
-		}
-
-		if (TermType.TWO_OPERATIONS == typeOfTerm) {
-			Term subOperation1 = operation.getOperation().get(0);
-			Term subOperation2 = operation.getOperation().get(1);
-
-			String operationType = operation.getOperationType();
-
-			return doMath(calculateTerm(subOperation1), calculateTerm(subOperation2), operationType);
-		}
-
-		if (TermType.AGR1_AND_OPERATION1 == typeOfTerm) {
-			Integer agr1 = operation.getArg1();
-			Term subOperation1 = operation.getOperation1();
-
-			String operationType = operation.getOperationType();
-
-			return doMath(agr1, calculateTerm(subOperation1), operationType);
-		}
-
-		if (TermType.ARG2_AND_OPERATION2 == typeOfTerm) {
-			Term subOperation2 = operation.getOperation2();
-			Integer agr2 = operation.getArg2();
-
-			String operationType = operation.getOperationType();
-
-			return doMath(calculateTerm(subOperation2), agr2, operationType);
-		}
-
-		return 0;
-	}
-
-	private TermType getTypeOfTerm(Term operation) {
-
-		if (CollectionUtils.isNotEmpty(operation.getArg())) {
-			return TermType.TWO_NUMBERS;
-		}
-		if (CollectionUtils.isNotEmpty(operation.getOperation())) {
-			return TermType.TWO_OPERATIONS;
-		}
-		if (operation.getOperation1() != null) {
-			return TermType.AGR1_AND_OPERATION1;
-		}
-		if (operation.getOperation2() != null) {
-			return TermType.ARG2_AND_OPERATION2;
-		}
-
-		return TermType.UNKNOWN_TYPE;
-	}
-
-	private double doMath(double agr1, double agr2, String operationType) {
-
-		double result = 0;
-
-		if ("SUB".equals(operationType)) {
-			result = agr1 - agr2;
-		} else if ("SUM".equals(operationType)) {
-			result = agr1 + agr2;
-		} else if ("MUL".equals(operationType)) {
-			result = agr1 * agr2;
-		} else if ("DIV".equals(operationType)) {
-			result = agr1 / agr2;
-		}
-
-		return result;
 	}
 }

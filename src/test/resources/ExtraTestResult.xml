@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<simpleCalculator xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="SimpleCalculator.xsd">
+    <expressionResults>
+        <expressionResult>
+            <result>16.0</result>
+        </expressionResult>
+        <expressionResult>
+            <result>5.0</result>
+        </expressionResult>
+        <expressionResult>
+            <result>6.0</result>
+        </expressionResult>
+    </expressionResults>
+</simpleCalculator>
